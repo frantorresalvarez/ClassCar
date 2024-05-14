@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1086194574339",
+    "project_id": "classcar-f97d0",
+    "storage_bucket": "classcar-f97d0.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1086194574339:android:17cfe20a3dba4ed0fc5a36",
+        "android_client_info": {
+          "package_name": "com.classcar.classcar"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyARmmkn2c-_kWiJaWPKSTicvhDpk1YEFJ8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
