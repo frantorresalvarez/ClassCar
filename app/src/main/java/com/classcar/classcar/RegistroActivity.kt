@@ -1,5 +1,6 @@
 package com.classcar.classcar
 
+import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.widget.Button
@@ -34,7 +35,9 @@ class RegistroActivity : AppCompatActivity() {
                 Toast.makeText(this,"Este campo no puede estar vacio",Toast.LENGTH_SHORT).show()
             }else{
                 registroUsuario(nombre,txtEmail,txtPassword)
-
+                Toast.makeText(this,"Registro Completado",Toast.LENGTH_SHORT).show()
+                val intent = Intent(this, LoginActivity::class.java)
+                startActivity(intent)
             }
         }
     }

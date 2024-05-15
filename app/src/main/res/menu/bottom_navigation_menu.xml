@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+        <item
+            android:id="@+id/navigation_home"
+            android:title="Inicio"
+            android:icon="@drawable/casa"
+            android:titleTextAppearance="@style/NavigationTitleSmall" />
+
+        <item
+            android:id="@+id/navigation_viajes"
+            android:title="Viajes"
+            android:icon="@drawable/search"
+            android:titleTextAppearance="@style/NavigationTitleSmall" />
+
+        <item
+            android:id="@+id/navigation_publicar"
+            android:title="Publicar"
+            android:icon="@drawable/anadir"
+            android:titleTextAppearance="@style/NavigationTitleSmall" />
+
+        <item
+            android:id="@+id/info_universidades"
+            android:title="Universidades"
+            android:icon="@drawable/facultad"
+            android:titleTextAppearance="@style/NavigationTitleSmall" />
+</menu>

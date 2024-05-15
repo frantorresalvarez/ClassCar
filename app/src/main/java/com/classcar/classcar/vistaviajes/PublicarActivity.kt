@@ -1,21 +1,23 @@
-package com.classcar.classcar
+package com.classcar.classcar.vistaviajes
 
 import android.app.DatePickerDialog
+import android.app.TimePickerDialog
 import android.content.Intent
 import android.location.Geocoder
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
-import android.view.Menu
 import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.widget.SearchView
+import com.classcar.classcar.PrincipalActivity
+import com.classcar.classcar.R
+import com.classcar.classcar.UniActivity
+import com.classcar.classcar.modelos.Viaje
 import com.classcar.classcar.rutas.ApiService
 import com.classcar.classcar.rutas.RouteResponse
-import com.classcar.classcar.vistaviajes.PublicarActivity
-import com.classcar.classcar.vistaviajes.ViajesActivity
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
@@ -24,6 +26,10 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.Polyline
 import com.google.android.gms.maps.model.PolylineOptions
 import com.google.android.material.bottomnavigation.BottomNavigationView
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.firestore.ktx.firestore
+import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -34,11 +40,16 @@ import java.util.Calendar
 import java.util.Locale
 import java.util.concurrent.locks.Lock
 
-class PrincipalActivity : AppCompatActivity(),OnMapReadyCallback {
+class PublicarActivity : AppCompatActivity(),OnMapReadyCallback {
     private lateinit var map: GoogleMap
     private lateinit var selectedDate: String
+    private lateinit var selectedTime: String
     private lateinit var tvDate: TextView
+    private lateinit var tvTime: TextView
     private lateinit var txtCantidad: EditText
+    private lateinit var auth: FirebaseAuth
+    private lateinit var origen: String
+    private lateinit var destino: String
     private var cantidad: Int = 0
     val coordinates = mutableListOf<Pair<Double, Double>>() // Cordenadas de la ruta
     lateinit var start: String
@@ -46,14 +57,14 @@ class PrincipalActivity : AppCompatActivity(),OnMapReadyCallback {
     var poly: Polyline? = null //Variable para poder dibujar en el mapa
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_principal)
+        setContentView(R.layout.activity_publicar)
 
         //Redireccion Menu
         val bottomNavigationView = findViewById<BottomNavigationView>(R.id.bottomNavigationView)
         bottomNavigationView.setOnNavigationItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.navigation_home -> {
-                    val intent = Intent(this,PrincipalActivity::class.java)
+                    val intent = Intent(this, PrincipalActivity::class.java)
                     startActivity(intent)
                     true
                 }
@@ -79,6 +90,7 @@ class PrincipalActivity : AppCompatActivity(),OnMapReadyCallback {
             }
         }
 
+        auth = Firebase.auth
         // SearchView para el origen
         val searchViewOrigen = findViewById<SearchView>(R.id.searchViewOrigen)
         searchViewOrigen.queryHint = "Selecciona tu ubicación"
@@ -101,10 +113,11 @@ class PrincipalActivity : AppCompatActivity(),OnMapReadyCallback {
             }
         }
         tvDate = findViewById(R.id.tvDate)
+        tvTime = findViewById(R.id.tvHour)
         txtCantidad = findViewById(R.id.etQuantity)
         val btnCleanRoute = findViewById<Button>(R.id.btnCleanRoute)
-        //val btnSelectRoute = findViewById<Button>(R.id.btnSelectRoute)
-        val btnBuscar = findViewById<Button>(R.id.btnBuscar)
+
+        val btnPublicar = findViewById<Button>(R.id.btnPublicar)
         val geocoder = Geocoder(this, Locale.getDefault())
         val mapFragment = supportFragmentManager.findFragmentById(R.id.map) as SupportMapFragment
         mapFragment.getMapAsync(this)
@@ -119,20 +132,19 @@ class PrincipalActivity : AppCompatActivity(),OnMapReadyCallback {
             Toast.makeText(this,"Selecciona tu ubicación y tu destino",Toast.LENGTH_SHORT).show()
         }
         tvDate.setOnClickListener{showDatePickerDialog()}
-        btnBuscar.setOnClickListener {
+        btnPublicar.setOnClickListener {
             val cantidadtxt = txtCantidad.text.toString()
-            if(cantidadtxt.isNotEmpty() && cantidadtxt.toIntOrNull() != null){
+            if(cantidadtxt.isNotEmpty()&&cantidadtxt.toIntOrNull()!= null){
                 cantidad = cantidadtxt.toInt()
             }
-            val intent = Intent(this@PrincipalActivity, ViajesActivity::class.java)
-            startActivity(intent)  // Iniciar la actividad
-            redirigir(cantidad)    // Llamar a la función después de iniciar la actividad
+            registroViaje()
         }
-
+        tvTime.setOnClickListener{showTime()}
 
         searchViewOrigen.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(query: String?): Boolean { //Obtiene el texto
                 query?.let {
+                    origen = it
                     val addresses = geocoder.getFromLocationName(it, 1) //direccion, it es la query
                     if (addresses != null) {
                         if (addresses.isNotEmpty()) {
@@ -144,9 +156,9 @@ class PrincipalActivity : AppCompatActivity(),OnMapReadyCallback {
                                 latitude,
                                 longitude
                             ), 10f))
-                            Toast.makeText(this@PrincipalActivity, "Punto de origen seleccionado", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(this@PublicarActivity, "Punto de origen seleccionado", Toast.LENGTH_SHORT).show()
                         } else {
-                            Toast.makeText(this@PrincipalActivity, "Dirección no encontrada", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(this@PublicarActivity, "Dirección no encontrada", Toast.LENGTH_SHORT).show()
                         }
                     }
                 }
@@ -160,6 +172,7 @@ class PrincipalActivity : AppCompatActivity(),OnMapReadyCallback {
         searchViewDestino.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(query: String?): Boolean {
                 query?.let {
+                    destino = it
                     val addresses = geocoder.getFromLocationName(it, 1)
                     if (addresses != null) {
                         if (addresses.isNotEmpty()) {
@@ -168,13 +181,13 @@ class PrincipalActivity : AppCompatActivity(),OnMapReadyCallback {
                             val longitude = location.longitude
                             coordinates.add(Pair(longitude, latitude) as Pair<Double, Double>)
                             map.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng(latitude, longitude), 10f))
-                            Toast.makeText(this@PrincipalActivity, "Punto de destino seleccionado", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(this@PublicarActivity, "Punto de destino seleccionado", Toast.LENGTH_SHORT).show()
                             if(coordinates.size==2){
                                 crearRuta(coordinates)
                             }
 
                         } else {
-                            Toast.makeText(this@PrincipalActivity, "Dirección no encontrada", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(this@PublicarActivity, "Dirección no encontrada", Toast.LENGTH_SHORT).show()
                         }
                     }
                 }
@@ -193,21 +206,56 @@ class PrincipalActivity : AppCompatActivity(),OnMapReadyCallback {
             .addConverterFactory(GsonConverterFactory.create())
             .build()
     }
+    // Funcion de Obtener la fecha
     fun showDatePickerDialog(){
         val calendar = Calendar.getInstance()
         val anios = calendar.get(Calendar.YEAR)
         val mes = calendar.get(Calendar.MONTH)
         val dia = calendar.get(Calendar.DAY_OF_MONTH)
         val dataPickerDialog = DatePickerDialog(this,
-                {_,selectYear,selectMonth,selectDayOfMonth ->
-                    selectedDate = "${pad(selectDayOfMonth)}/${pad(selectMonth)}/${pad(selectYear)}"
-                    tvDate.text = selectedDate
-                }, anios, mes, dia
-            )
+            {_,selectYear,selectMonth,selectDayOfMonth ->
+                selectedDate = "${pad(selectDayOfMonth)}/${pad(selectMonth)}/${pad(selectYear)}"
+                tvDate.text = selectedDate
+            }, anios, mes, dia
+        )
         dataPickerDialog.show()
+    }
+    //Funcion para obtener tiempo
+    fun showTime(){
+        val calendar = Calendar.getInstance()
+        val hora = calendar.get(Calendar.HOUR_OF_DAY)
+        val minutos = calendar.get(Calendar.MINUTE)
+        val timePickerDialog = TimePickerDialog(this,
+            {_,selectHour,selectMinute ->
+                selectedTime = "${pad(selectHour)}:${pad(selectMinute)}"
+                tvTime.text = selectedTime
+            }, hora, minutos, true
+        )
+        timePickerDialog.show()
     }
     fun redirigir(cantidad:Int){
         Log.d("resultado","coordenadas ${start} ${end} ${selectedDate} $cantidad")
+    }
+    //Funcion para registrar el viaje
+    fun registroViaje(){
+        val user = auth.currentUser
+        if(user != null){
+            val userId = user.uid //unique id
+            val db = Firebase.firestore // firestore es la bd no relacionada
+            val viajeCollection = db.collection("Viaje").document()
+            val viajeData = hashMapOf(
+                "idUsuario" to userId, "Origen" to start, "Destino" to end, "fecha" to selectedDate,
+                "Hora" to selectedTime, "Pasajeros" to cantidad, "origentxt" to origen, "destinotxt" to destino
+            )
+            viajeCollection.set(viajeData).addOnSuccessListener {
+                Toast.makeText(this,"Datos guardados correctamente", Toast.LENGTH_SHORT).show()
+                val intent = Intent(this, ViajesActivity::class.java)
+                startActivity(intent)
+            }.addOnFailureListener{
+                Toast.makeText(this,"Fallo al ingresar tus datos", Toast.LENGTH_SHORT).show()
+            }
+        }
+
     }
     private fun pad(number:Int):String{
         return if (number<10) "0$number" else "$number"
@@ -221,7 +269,7 @@ class PrincipalActivity : AppCompatActivity(),OnMapReadyCallback {
                 if(call.isSuccessful){
                     drawRoute(call.body())
                 }else{
-                    Toast.makeText(this@PrincipalActivity, "Error al crear la ruta", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@PublicarActivity, "Error al crear la ruta", Toast.LENGTH_SHORT).show()
                 }
             }catch(e:Exception){
                 Log.e("Respuesta de la ruta","${e.message}")
@@ -242,5 +290,4 @@ class PrincipalActivity : AppCompatActivity(),OnMapReadyCallback {
     override fun onMapReady(map: GoogleMap) {
         this.map = map
     }
-
 }

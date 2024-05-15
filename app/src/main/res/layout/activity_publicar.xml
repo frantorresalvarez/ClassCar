@@ -1,6 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-
-
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
@@ -32,7 +30,7 @@
             android:id="@+id/map"
             android:name="com.google.android.gms.maps.SupportMapFragment"
             android:layout_width="match_parent"
-            android:layout_height="348dp"
+            android:layout_height="362dp"
             android:layout_marginTop="8dp" />
 
         <LinearLayout
@@ -74,6 +72,17 @@
                     android:focusable="true"
                     android:onClick="showDatePickerDialog" />
 
+                <TextView
+                    android:id="@+id/tvHour"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Hora de salida"
+                    android:textSize="16sp"
+                    android:layout_marginBottom="8dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:onClick="showHora" />
+
             </LinearLayout>
 
             <LinearLayout
@@ -100,10 +109,10 @@
             </LinearLayout>
         </LinearLayout>
         <Button
-            android:id="@+id/btnBuscar"
+            android:id="@+id/btnPublicar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Buscar"
+            android:text="Publicar"
             android:onClick="clearRoute" />
     </LinearLayout>
 
@@ -118,5 +127,3 @@
 
 
 </RelativeLayout>
-
-

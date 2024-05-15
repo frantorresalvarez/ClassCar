@@ -6,9 +6,7 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
-    <!-- Agrega un botón para desplegar el menú -->
 
-    <!-- Agrega un layout para el menú desplegable -->
     <Button
         android:id="@+id/btnMenu"
         android:layout_width="wrap_content"
@@ -28,8 +26,7 @@
         android:visibility="gone"
         android:padding="16dp">
 
-        <!-- Agrega opciones para seleccionar universidad, lugar, fecha, etc. -->
-        <!-- Aquí puedes agregar tus elementos de selección -->
+
 
     </LinearLayout>
 
